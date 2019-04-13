@@ -27,7 +27,7 @@
 #include <openssl/ssl.h>
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
-#include "q-ngtcp2-crypto.h"
+#include "ngtcp2-crypto.h"
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
 #include "curl_memory.h"

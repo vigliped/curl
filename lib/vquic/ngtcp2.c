@@ -29,8 +29,8 @@
 #include "sendf.h"
 #include "strdup.h"
 #include "rand.h"
-#include "q-ngtcp2.h"
-#include "q-ngtcp2-crypto.h"
+#include "ngtcp2.h"
+#include "ngtcp2-crypto.h"
 
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
@@ -680,12 +680,15 @@ static int quic_read_tls(struct connectdata *conn)
   /* NEVER-REACHED */
 }
 
-static int cb_recv_crypto_data(ngtcp2_conn *tconn, uint64_t offset,
-                               const uint8_t *data, size_t datalen,
-                               void *user_data)
+static int
+cb_recv_crypto_data(ngtcp2_conn *tconn, ngtcp2_crypto_level crypto_level,
+                    uint64_t offset,
+                    const uint8_t *data, size_t datalen,
+                    void *user_data)
 {
   struct connectdata *conn = (struct connectdata *)user_data;
   (void)offset;
+  (void)crypto_level;
 
   write_server_handshake(conn, data, datalen);
 
@@ -783,7 +786,7 @@ cb_decrypt_data(ngtcp2_conn *tconn,
   return rc;
 }
 
-static int cb_recv_stream_data(ngtcp2_conn *tconn, uint64_t stream_id,
+static int cb_recv_stream_data(ngtcp2_conn *tconn, int64_t stream_id,
                                int fin, uint64_t offset,
                                const uint8_t *buf, size_t buflen,
                                void *user_data, void *stream_user_data)
@@ -815,7 +818,7 @@ static int cb_acked_crypto_offset(ngtcp2_conn *tconn,
 }
 
 static int
-cb_acked_stream_data_offset(ngtcp2_conn *tconn, uint64_t stream_id,
+cb_acked_stream_data_offset(ngtcp2_conn *tconn, int64_t stream_id,
                             uint64_t offset, size_t datalen, void *user_data,
                             void *stream_user_data)
 {
@@ -832,7 +835,7 @@ cb_acked_stream_data_offset(ngtcp2_conn *tconn, uint64_t stream_id,
   return 0;
 }
 
-static int cb_stream_close(ngtcp2_conn *tconn, uint64_t stream_id,
+static int cb_stream_close(ngtcp2_conn *tconn, int64_t stream_id,
                            uint16_t app_error_code,
                            void *user_data, void *stream_user_data)
 {
@@ -962,6 +965,7 @@ CURLcode Curl_quic_connect(struct connectdata *conn,
   int rc;
   struct quicsocket *qs = &conn->quic;
   CURLcode result;
+  ngtcp2_path path; /* TODO: this must be initialized properly */
   (void)sockfd;
   (void)addr;
   (void)addrlen;
@@ -987,12 +991,13 @@ CURLcode Curl_quic_connect(struct connectdata *conn,
   quic_settings(&qs->settings);
   quic_callbacks(&qs->callbacks);
 
-#ifdef NGTCP2_PROTO_VER_D17
-#define QUICVER NGTCP2_PROTO_VER_D17
+#ifdef NGTCP2_PROTO_VER_D18
+#define QUICVER NGTCP2_PROTO_VER_D18
 #else
 #error "unsupported ngtcp2 version"
 #endif
   rc = ngtcp2_conn_client_new(&qs->conn, &qs->dcid, &qs->scid,
+                              &path,
                               QUICVER, &qs->callbacks, &qs->settings, conn);
   if(rc)
     return CURLE_FAILED_INIT; /* TODO: create a QUIC error code */
@@ -1013,4 +1018,12 @@ int Curl_quic_ver(char *p, size_t len)
   return msnprintf(p, len, " ngtcp2/blabla");
 }
 
+CURLcode Curl_quic_is_connected(struct connectdata *conn, int sockindex,
+                                bool *done)
+{
+  (void)conn;
+  (void)sockindex;
+  *done = FALSE;
+  return CURLE_OK;
+}
 #endif
