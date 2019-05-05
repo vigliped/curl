@@ -2167,6 +2167,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
     http->sendit = NULL;
   }
 
+#ifndef CURL_DISABLE_MIME
   if(http->sendit) {
     const char *cthdr = Curl_checkheaders(conn, "Content-Type");
 
@@ -2191,6 +2192,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
       return result;
     http->postsize = Curl_mime_size(http->sendit);
   }
+#endif
 
   ptr = Curl_checkheaders(conn, "Transfer-Encoding");
   if(ptr) {
@@ -2759,6 +2761,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
         return result;
     }
 
+#ifndef CURL_DISABLE_MIME
     /* Output mime-generated headers. */
     {
       struct curl_slist *hdr;
@@ -2769,6 +2772,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
           return result;
       }
     }
+#endif
 
     /* For really small posts we don't use Expect: headers at all, and for
        the somewhat bigger ones we allow the app to disable it. Just make
