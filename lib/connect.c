@@ -684,14 +684,12 @@ void Curl_updateconninfo(struct connectdata *conn, curl_socket_t sockfd)
     return;
 
   if(!conn->bits.reuse && !conn->bits.tcp_fastopen) {
-#if defined(HAVE_GETPEERNAME) || defined(HAVE_GETSOCKNAME) ||   \
-  defined(HAVE_GETADDRESSINFO)
     struct Curl_easy *data = conn->data;
     char buffer[STRERROR_LEN];
     curl_socklen_t len;
     struct Curl_sockaddr_storage ssrem;
     struct Curl_sockaddr_storage ssloc;
-#else
+#if !defined(HAVE_GETPEERNAME) && !defined(HAVE_GETSOCKNAME)
     (void)sockfd;
 #endif
 #ifdef HAVE_GETPEERNAME
@@ -713,7 +711,6 @@ void Curl_updateconninfo(struct connectdata *conn, curl_socket_t sockfd)
       return;
     }
 #endif
-#ifdef HAVE_GETADDRESSINFO
     if(!getaddressinfo((struct sockaddr*)&ssrem,
                        conn->primary_ip, &conn->primary_port)) {
       failf(data, "ssrem inet_ntop() failed with errno %d: %s",
@@ -728,7 +725,6 @@ void Curl_updateconninfo(struct connectdata *conn, curl_socket_t sockfd)
             errno, Curl_strerror(errno, buffer, sizeof(buffer)));
       return;
     }
-#endif
   }
 
   /* persist connection info in session handle */
