@@ -686,10 +686,11 @@ void Curl_updateconninfo(struct connectdata *conn, curl_socket_t sockfd)
   if(!conn->bits.reuse && !conn->bits.tcp_fastopen) {
     struct Curl_easy *data = conn->data;
     char buffer[STRERROR_LEN];
-    curl_socklen_t len;
     struct Curl_sockaddr_storage ssrem;
     struct Curl_sockaddr_storage ssloc;
-#if !defined(HAVE_GETPEERNAME) && !defined(HAVE_GETSOCKNAME)
+#if defined(HAVE_GETPEERNAME) || defined(HAVE_GETSOCKNAME)
+    curl_socklen_t len;
+#else
     (void)sockfd;
 #endif
 #ifdef HAVE_GETPEERNAME
