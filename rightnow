@@ -1,0 +1,1 @@
+curl -u "vigliped:Viglione#32" -X PATCH -H "OSvC-CREST-Application-Context:Update Account" -H "Content-Type:application/json" -d "{\"name\":{\"first\":\"George\"}}" https://bspr--tst1.custhelp.com/services/rest/connect/v1.4/accounts/2000
